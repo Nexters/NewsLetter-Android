@@ -37,16 +37,43 @@ jobs:
 
       - name: Deploy via Fastlane
         run: |
-          fastlane android deploy version_code:${{ github.event.inputs.version_code }} version_name:${{ github.event.inputs.version_name }}
+          set -o pipefail
+
+          fastlane android deploy \
+            version_code:${{ github.event.inputs.version_code }} \
+            version_name:${{ github.event.inputs.version_name }} \
+            2>&1 | tee fastlane.log
 
       - name: Notify to Discord
-        if: success()
-        run: |
-          curl -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "content": "✅ 내부 테스트 완료!\n앱이 성공적으로 업로드되었습니다.",
-              "username": "공주"
-            }'
+        if: always()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          if [ "$JOB_STATUS" = "success" ]; then
+            MESSAGE="✅ 내부 테스트 완료!
+          앱이 성공적으로 업로드되었습니다."
+          else
+            ERROR_LOG=$(grep -Ei "error|exception|failed|failure" fastlane.log 2>/dev/null \
+              | tail -n 5 \
+              | head -c 1500)
+
+            if [ -z "$ERROR_LOG" ]; then
+              ERROR_LOG=$(tail -n 10 fastlane.log 2>/dev/null | head -c 1500)
+            fi
+
+            MESSAGE="❌ 내부 테스트 배포 실패
+
+          \`\`\`
+          $ERROR_LOG
+          \`\`\`"
+          fi
+
+          PAYLOAD=$(jq -n \
+            --arg content "$MESSAGE" \
+            --arg username "공주" \
+            '{content: $content, username: $username}')
+
+          curl -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"
