@@ -54,14 +54,24 @@ jobs:
             MESSAGE="✅ 내부 테스트 완료!
           앱이 성공적으로 업로드되었습니다."
           else
-            ERROR_LOG=$(grep -Ei "error|exception|failed|failure" fastlane.log 2>/dev/null \
-              | tail -n 5 \
-              | head -c 1500)
+            ERROR_LINE=$(grep -in "fastlane finished with errors" fastlane.log 2>/dev/null \
+              | tail -n 1 \
+              | cut -d: -f1)
 
-            if [ -z "$ERROR_LOG" ]; then
-              ERROR_LOG=$(tail -n 10 fastlane.log 2>/dev/null | head -c 1500)
+            if [ -n "$ERROR_LINE" ]; then
+              START_LINE=$((ERROR_LINE - 20))
+
+              if [ "$START_LINE" -lt 1 ]; then
+                START_LINE=1
+              fi
+
+              ERROR_LOG=$(sed -n "${START_LINE},${ERROR_LINE}p" fastlane.log)
+            else
+              ERROR_LOG=$(tail -n 20 fastlane.log 2>/dev/null)
             fi
 
+            ERROR_LOG=$(echo "$ERROR_LOG" | head -c 1800)
+      
             MESSAGE="❌ 내부 테스트 배포 실패
 
           \`\`\`
