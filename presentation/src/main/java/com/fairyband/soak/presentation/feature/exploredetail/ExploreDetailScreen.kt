@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -205,10 +206,9 @@ fun ExploreDetailScreen(
                 }
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Row(
+            FlowRow(
                 modifier = Modifier.height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.Top,
             ) {
                 Text(
                     text = feed.keyword,
@@ -216,13 +216,15 @@ fun ExploreDetailScreen(
                     color = titleColor
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                VerticalDivider(color = titleColor)
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = feed.letter,
-                    style = SoakTheme.typography.body13.copy(fontWeight = FontWeight.Medium),
-                    color = titleColor
-                )
+                if (feed.letter.isNotBlank()) {
+                    VerticalDivider(color = titleColor)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = feed.letter,
+                        style = SoakTheme.typography.body13.copy(fontWeight = FontWeight.Medium),
+                        color = titleColor
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(if (titleLineCount == TITLE_MAX_LINE) 16.dp else 44.dp))
             Text(
@@ -231,7 +233,6 @@ fun ExploreDetailScreen(
                 style = SoakTheme.typography.body14.copy(fontWeight = FontWeight.Normal),
                 color = SoakTheme.colors.textPrimary,
                 maxLines = SUMMARY_MAX_LINE,
-                minLines = SUMMARY_MAX_LINE,
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.weight(1f))
